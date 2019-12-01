@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[18]:
+# In[ ]:
 
 
 import numpy as np
@@ -16,10 +16,13 @@ import os
 from scipy import ndimage
 import imutils
 import math
+import sys
+sys.path.insert(1, './Code/')
+from handdetector import handDetector
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 
-# In[6]:
+# In[ ]:
 
 
 def getAngle(a, b, c):
@@ -27,7 +30,7 @@ def getAngle(a, b, c):
     return ang + 360 if ang < 0 else ang
 
 
-# In[7]:
+# In[ ]:
 
 
 def find_parent(parent, i):
@@ -36,7 +39,7 @@ def find_parent(parent, i):
     return find_parent(parent, parent[i])
 
 
-# In[8]:
+# In[ ]:
 
 
 def shrink_array(cntsarray):
@@ -57,7 +60,7 @@ def shrink_array(cntsarray):
     return finalcnts
 
 
-# In[9]:
+# In[ ]:
 
 
 def flattener(image, pts, w, h):
@@ -122,7 +125,7 @@ def flattener(image, pts, w, h):
     return warp
 
 
-# In[10]:
+# In[ ]:
 
 
 def get_rank(imarray, cnt):
@@ -135,7 +138,7 @@ def get_rank(imarray, cnt):
     return warp1
 
 
-# In[11]:
+# In[ ]:
 
 
 def get_suit(imarray, cnt):
@@ -148,7 +151,7 @@ def get_suit(imarray, cnt):
     return warp1
 
 
-# In[12]:
+# In[ ]:
 
 
 def card_detect(loc):
@@ -197,13 +200,14 @@ def card_detect(loc):
     return a
 
 
-# In[13]:
+# In[ ]:
 
 
 def rankplussuit_detect(imarray, cntsarray):
     f= open('./model.pkl', 'rb')
     clf= pickle.load(f)
     qclf=pickle.load(open('./model2.pkl', 'rb'))
+    cards= []
     for cnt in cntsarray:
         obsrank= get_rank(imarray, cnt)
         obssuit= get_suit(imarray, cnt)
@@ -213,16 +217,21 @@ def rankplussuit_detect(imarray, cntsarray):
         fd, hog_image = hog(obsrankres, orientations=9, pixels_per_cell=(8, 8), 
                         cells_per_block=(2, 2), visualize=True, multichannel=False)
         hog_image= np.reshape(hog_image, (1, hog_image.shape[0]*hog_image.shape[1]))[0]
-        print ("The rank of the card is: " + str(clf.predict([hog_image])[0]))
+        rp= str(clf.predict([hog_image])[0])
+        print ("The rank of the card is: " + rp)
         
         obssuitres= cv2.resize(obssuit, (20, 35))
         fd, hog_image = hog(obssuitres, orientations=9, pixels_per_cell=(8, 8), 
                         cells_per_block=(2, 2), visualize=True, multichannel=False)
         hog_image= np.reshape(hog_image, (1, hog_image.shape[0]*hog_image.shape[1]))[0]
-        print ("The suit of the card is: " + str(qclf.predict([hog_image])[0]))
+        sp= str(qclf.predict([hog_image])[0])
+        print ("The suit of the card is: " + sp)
+        cards.append([rp, sp])
+    print (cards)
+    return cards
 
 
-# In[21]:
+# In[ ]:
 
 
 def rankplussuit_detect2(imarray, cntsarray):
@@ -273,22 +282,19 @@ def rankplussuit_detect2(imarray, cntsarray):
         sp= os.listdir(suitPath)[np.argmin(ssesuits)]
         print ("The suit of the card is: " + os.listdir(suitPath)[np.argmin(ssesuits)])
         cards.append([rp, sp])
+    print (cards)
     return cards
 
 
-# In[22]:
+# In[ ]:
 
 
 imarray= np.array(cv2.imread('./im1.jpeg', 0))
 cntsarray= card_detect('./im1.jpeg')
 print (len(cntsarray))
 cards= rankplussuit_detect2(imarray, cntsarray)
-
-
-# In[16]:
-
-
-os.listdir('./templates/suits/')
+#cards should be a list of 7
+# print (handDetector(cards))
 
 
 # In[ ]:

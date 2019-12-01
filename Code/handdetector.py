@@ -151,16 +151,3 @@ def handDetector(cards):#list of 7 tuples
         return "high card"
     return "bro just call it please!"
 
-
-# In[58]:
-
-
-handDetector([['A', 'Hearts'], ['K', 'Hearts'], ['10', 'Hearts'], ['7', 'Clubs'], ['Q', 'Hearts'], ['3', 'Spades'],
-             ['J', 'Hearts']])
-
-
-# In[ ]:
-
-
-
-
