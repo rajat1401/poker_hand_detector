@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import numpy as np
@@ -17,12 +17,12 @@ from scipy import ndimage
 import imutils
 import math
 import sys
-sys.path.insert(1, './Code/')
-from handdetector import handDetector
+# sys.path.insert(1, './Code/')
+# from handdetector import handDetector
 get_ipython().run_line_magic('matplotlib', 'inline')
 
 
-# In[ ]:
+# In[2]:
 
 
 def getAngle(a, b, c):
@@ -30,7 +30,7 @@ def getAngle(a, b, c):
     return ang + 360 if ang < 0 else ang
 
 
-# In[ ]:
+# In[3]:
 
 
 def find_parent(parent, i):
@@ -39,7 +39,18 @@ def find_parent(parent, i):
     return find_parent(parent, parent[i])
 
 
-# In[ ]:
+# In[4]:
+
+
+def adjust_gamma(image, gamma=1.0):
+    invGamma = 1.0 / gamma
+    table = np.array([((i / 255.0) ** invGamma) * 255
+        for i in np.arange(0, 256)]).astype("uint8")
+ 
+    return cv2.LUT(image, table)
+
+
+# In[5]:
 
 
 def shrink_array(cntsarray):
@@ -60,7 +71,7 @@ def shrink_array(cntsarray):
     return finalcnts
 
 
-# In[ ]:
+# In[6]:
 
 
 def flattener(image, pts, w, h):
@@ -125,49 +136,56 @@ def flattener(image, pts, w, h):
     return warp
 
 
-# In[ ]:
+# In[7]:
 
 
 def get_rank(imarray, cnt):
     card= cnt
     x,y,w,h= cv2.boundingRect(card)
-    warp1= flattener(imarray, card, w, h)[6:45, 5:34]
+    warp1= flattener(imarray, card, w, h)
 #     print (warp1.shape)
+    cv2.imwrite('./pers.png', warp1)
     plt.imshow(warp1)
     plt.show()
+    warp1= warp1[6:45, 5:34]
     return warp1
 
 
-# In[ ]:
+# In[8]:
 
 
 def get_suit(imarray, cnt):
     card= cnt
     x,y,w,h= cv2.boundingRect(card)
-    warp1= flattener(imarray, card, w, h)[44:77, 5:34]
+    warp1= flattener(imarray, card, w, h)
 #     print (warp1.shape)
     plt.imshow(warp1)
     plt.show()
+    warp1= warp1[44:77, 5:34]
     return warp1
 
 
-# In[ ]:
+# In[9]:
 
 
 def card_detect(loc):
     imarray= np.array(cv2.imread(loc, 0))
     print (imarray.shape)
     imblur1= cv2.GaussianBlur(imarray, (5,5), 0)
+    imgamma1= adjust_gamma(imblur1, 0.5)
+    cv2.imwrite('./blur.png', imblur1)
     imblur2= cv2.GaussianBlur(imarray, (7,7), 0)
+    imgamma2= adjust_gamma(imblur2, 0.5)
     plt.imshow(imblur1, cmap= 'gray')
     plt.title("After Gaussian Blur")
     plt.show()
     
     high_thresh, thresh_im = cv2.threshold(imblur1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    low_thresh = 0.5*high_thresh
+    low_thresh = 0.30*high_thresh
     edgearray1= cv2.Canny(imblur1, low_thresh, high_thresh)
+    cv2.imwrite('./edge.png', edgearray1)
     high_thresh, thresh_im = cv2.threshold(imblur2, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    low_thresh = 0.5*high_thresh
+    low_thresh = 0.20*high_thresh
     edgearray2= cv2.Canny(imblur2, low_thresh, high_thresh)
     plt.imshow(edgearray1, cmap= 'gray')
     plt.title("After Edge detection")
@@ -177,7 +195,7 @@ def card_detect(loc):
     cnts2= cv2.findContours(edgearray2.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts2= imutils.grab_contours(cnts2)
     cnts1.extend(cnts2)
-    cnts= sorted(cnts1, key = cv2.contourArea, reverse = True)[:15]
+    cnts= sorted(cnts1, key = cv2.contourArea, reverse = True)[:25]
     print (len(cnts))
     
     cntsarray= []
@@ -200,7 +218,157 @@ def card_detect(loc):
     return a
 
 
-# In[ ]:
+# In[14]:
+
+
+cardDict= {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':11, 'Q':12, 'K':13, 'A':14}
+suitDict= {'Hearts':0, 'Diamond':1, 'Spades':2, 'Clubs':3}
+
+
+# In[3]:
+
+
+def check_royal_flush(cards, countmat):
+    for i in range(len(countmat)):
+        if(sum(countmat[i][-5:])== 5):
+            return True
+    return False
+
+
+# In[4]:
+
+
+def check_straight_flush(cards, countmat):
+    for i in range(len(countmat)):
+        for j in range(1, 7):
+            if(sum(countmat[i][j:j+5])== 5):
+                return True
+        if(sum(countmat[i][0:4])== 4 and countmat[i][12]== 1):
+            return True
+    return False
+
+
+# In[5]:
+
+
+def check_four_kind(cards, countmat):
+    for i in range(len(countmat[0])):
+        if(sum(countmat[:, i])== 4):
+            return True
+    return False
+
+
+# In[10]:
+
+
+def check_full_house(cards, countmat):
+    for i in range(len(countmat)):
+        for j in range(len(countmat)):
+            if(sum(countmat[i])== 3 and sum(countmat[j])== 2):
+                return True
+    return False
+
+
+# In[8]:
+
+
+def check_flush(cards, countmat):
+    for i in range(len(countmat)):
+        if(sum(countmat[i])>= 5):
+            return True
+    return False
+
+
+# In[9]:
+
+
+def check_straight(cards, countmat):
+    cardcounts= np.zeros(13)
+    for i in range(len(cards)):
+        cardcounts[cardDict[cards[i][0]]-2]+= 1
+    for i in range(0, 7):
+        if(sum(cardcounts[i:i+5])>= 5 and max(cardcounts[i:i+5])-min(cardcounts[i:i+5])<= 1):
+            return True
+    if(sum(cardcounts[0:4])+cardcounts[12]>= 5 and max(max(cardcounts[0:4]), cardcounts[12])-min(min(cardcounts[0:4]), cardcounts[12])<= 1):
+        return True
+    return False
+
+
+# In[2]:
+
+
+def check_three_kind(cards, countmat):
+    for i in range(len(countmat[0])):
+        if(sum(countmat[:, i])== 3):
+            return True
+    return False
+
+
+# In[1]:
+
+
+def check_two_pairs(cards, countmat):
+    for i in range(len(countmat[0])):
+        for j in range(len(countmat[0])):
+            if(i!= j and sum(countmat[:, i])== 2 and sum(countmat[:, j]== 2)):
+                return True
+    return False
+
+
+# In[6]:
+
+
+def check_pair(cards, countmat):
+    for i in range(len(countmat[0])):
+        if(sum(countmat[:, i])== 2):
+            return True
+    return False
+
+
+# In[7]:
+
+
+def check_high_card(cards, countmat):
+    counts= np.sum(countmat, axis= 0)
+    if(sum(counts[-4:])> 0):
+        return True
+    return False
+
+
+# In[11]:
+
+
+def handDetector(cards):#list of 7 tuples
+    countmat= np.zeros((4, 13))
+    for i in range(len(cards)):
+        countmat[suitDict[cards[i][1]]][cardDict[cards[i][0]]-2]+= 1
+    countmat= np.array(countmat)
+    print (countmat)
+    
+    if(check_royal_flush(cards, countmat)):
+        return "royal flush"
+    if(check_straight_flush(cards, countmat)):
+        return "straight flush"
+    if(check_four_kind(cards, countmat)):
+        return "four of kind"
+    if(check_full_house(cards, countmat)):
+        return "full house"
+    if(check_flush(cards, countmat)):
+        return "flush"
+    if(check_straight(cards, countmat)):
+        return "straight"
+    if(check_three_kind(cards, countmat)):
+        return "three of kind"
+    if(check_two_pairs(cards, countmat)):
+        return "two pairs"
+    if(check_pair(cards, countmat)):
+        return "pair"
+    if(check_high_card(cards, countmat)):
+        return "high card"
+    return "bro just call it please!"
+
+
+# In[11]:
 
 
 def rankplussuit_detect(imarray, cntsarray):
@@ -231,7 +399,7 @@ def rankplussuit_detect(imarray, cntsarray):
     return cards
 
 
-# In[ ]:
+# In[12]:
 
 
 def rankplussuit_detect2(imarray, cntsarray):
@@ -286,15 +454,15 @@ def rankplussuit_detect2(imarray, cntsarray):
     return cards
 
 
-# In[ ]:
+# In[15]:
 
 
-imarray= np.array(cv2.imread('./im1.jpeg', 0))
-cntsarray= card_detect('./im1.jpeg')
+imarray= np.array(cv2.imread('./im9.jpeg', 0))
+cntsarray= card_detect('./im9.jpeg')
 print (len(cntsarray))
 cards= rankplussuit_detect2(imarray, cntsarray)
 #cards should be a list of 7
-# print (handDetector(cards))
+print (handDetector(cards))
 
 
 # In[ ]:

@@ -11,7 +11,7 @@ cardDict= {'2':2, '3':3, '4':4, '5':5, '6':6, '7':7, '8':8, '9':9, '10':10, 'J':
 suitDict= {'Hearts':0, 'Diamond':1, 'Spades':2, 'Clubs':3}
 
 
-# In[ ]:
+# In[3]:
 
 
 def check_royal_flush(cards, countmat):
@@ -21,7 +21,7 @@ def check_royal_flush(cards, countmat):
     return False
 
 
-# In[ ]:
+# In[4]:
 
 
 def check_straight_flush(cards, countmat):
@@ -34,26 +34,28 @@ def check_straight_flush(cards, countmat):
     return False
 
 
-# In[ ]:
+# In[5]:
 
 
 def check_four_kind(cards, countmat):
-    for i in range(len(countmat)):
-        if(sum(countmat[i])== 4):
+    for i in range(len(countmat[0])):
+        if(sum(countmat[:, i])== 4):
             return True
     return False
 
 
-# In[ ]:
+# In[10]:
 
 
 def check_full_house(cards, countmat):
-    if(check_three_kind(cards, countmat) and check_pair(cards, countmat)):
-        return True
+    for i in range(len(countmat)):
+        for j in range(len(countmat)):
+            if(sum(countmat[i])== 3 and sum(countmat[j])== 2):
+                return True
     return False
 
 
-# In[3]:
+# In[8]:
 
 
 def check_flush(cards, countmat):
@@ -63,7 +65,7 @@ def check_flush(cards, countmat):
     return False
 
 
-# In[ ]:
+# In[9]:
 
 
 def check_straight(cards, countmat):
@@ -73,43 +75,43 @@ def check_straight(cards, countmat):
     for i in range(0, 7):
         if(sum(cardcounts[i:i+5])>= 5 and max(cardcounts[i:i+5])-min(cardcounts[i:i+5])<= 1):
             return True
-    if(sum(cardcounts[0:4]) + cardcounts[12]>= 5 and max(max(cardcounts[0:4]), cardcounts[12])-min(min(cardcounts[0:4]), cardcounts[12])<= 1):
+    if(sum(cardcounts[0:4])+cardcounts[12]>= 5 and max(max(cardcounts[0:4]), cardcounts[12])-min(min(cardcounts[0:4]), cardcounts[12])<= 1):
         return True
     return False
 
 
-# In[ ]:
+# In[2]:
 
 
 def check_three_kind(cards, countmat):
-    for i in range(len(countmat)):
-        if(sum(countmat[i])== 3):
+    for i in range(len(countmat[0])):
+        if(sum(countmat[:, i])== 3):
             return True
     return False
 
 
-# In[ ]:
+# In[1]:
 
 
 def check_two_pairs(cards, countmat):
-    for i in range(len(countmat)):
-        for j in range(len(countmat)):
-            if(i!= j and sum(countmat[i])== 2 and sum(countmat[j]== 2)):
+    for i in range(len(countmat[0])):
+        for j in range(len(countmat[0])):
+            if(i!= j and sum(countmat[:, i])== 2 and sum(countmat[:, j]== 2)):
                 return True
     return False
 
 
-# In[ ]:
+# In[6]:
 
 
 def check_pair(cards, countmat):
-    for i in range(len(countmat)):
-        if(sum(countmat[i])== 2):
+    for i in range(len(countmat[0])):
+        if(sum(countmat[:, i])== 2):
             return True
     return False
 
 
-# In[ ]:
+# In[7]:
 
 
 def check_high_card(cards, countmat):
@@ -119,7 +121,7 @@ def check_high_card(cards, countmat):
     return False
 
 
-# In[ ]:
+# In[11]:
 
 
 def handDetector(cards):#list of 7 tuples
